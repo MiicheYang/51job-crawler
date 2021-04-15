@@ -109,6 +109,9 @@ def crawl(config):
         print(f'共{success}条解析成功')
     return results
 
+def save_data(path, data):
+    pass
+
 if __name__ == '__main__':
 
     with open(yaml_path, 'r', encoding = 'utf-8') as f:
