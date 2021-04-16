@@ -127,6 +127,8 @@ def parse_header(center):
         tags = [t.text for t in jtag.find_all('span')]
     except:
         tags = []
+    while len(info) < 5:
+        info.append('')
     return title, salary, cname, info, tags
 
 # 解析JD
@@ -171,6 +173,7 @@ def parse_com_tags(sider):
     box = sider.find_all('div', class_='tBorderTop_box')[0]
     tags = box.find_all('div', class_='com_tag')[0]
     com = []
+    # 公司类型；公司规模；行业
     for p in tags.find_all('p'):
         try:
             com.append(p['title'])
