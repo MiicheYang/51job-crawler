@@ -1,0 +1,8 @@
+city: ['北京', '广东省', '上海', '深圳']
+workyear: ['在校生/应届生','1-3年','无需经验']
+salary: # [mins, maxs]
+cotype: # [t1, t2, ...]
+degreefrom: ['本科','硕士','博士']
+cosize: # []
+jobterm: # []
+save_dir: 'D:\\0506'

@@ -2,7 +2,8 @@ import requests
 from typing import List
 from bs4 import BeautifulSoup
 import http.cookiejar as cookielib
-import json
+import numpy as np
+import re
 
 crawl_header = {"user-agent" : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_0) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11"}
 
@@ -15,7 +16,7 @@ def get_midfix(salary = None) -> str:
     return midfix
 
 # 根据关键词获取后缀
-# 需要添加 经验；学历；公司类型；工作类型；公司规模 关键词
+# 经验；学历；公司类型；工作类型；公司规模
 def get_suffix(config: dict) -> str:
     wy, wyn = code_workyear(config['workyear'])
     if wy != '99': print('工作经验：' + wyn)
@@ -183,3 +184,82 @@ def parse_com_tags(sider):
         com.append('')
     return com
     
+def parse_jd_skill(jd, skills):
+    # skills: [[s11,s12,s13],[s21,s21],...]
+    # jd: string
+    if jd is None: return [0 for _ in range(len(skills))], [0,0,0,0,0,0]
+    else: jd = jd.lower()
+    job_skill = [0 for _ in range(len(skills))]
+    for i in range(len(skills)):
+        for s in skills[i]:
+            pattern = ''
+            for char in s:
+                if char in ['+', '-', '#']: pattern += f'\{char}'
+                else: pattern += char
+            if s == 'c': j = ' '+jd.replace('c++','').replace('c#','')+' '
+            else: j = ' '+jd+' '
+            num = len(re.findall(pattern,j)) + len(re.findall(r'^a-Z'+pattern+'^a-Z',j))\
+                    - len(re.findall(pattern+r'^a-Z',j)) - len(re.findall(r'^a-Z'+pattern,j))
+            job_skill[i] += num
+
+    if '奖金' or '年终奖' in jd: dummys = [1,0,0,0,0,0]
+    else: dummys = [0,0,0,0,0,0]
+
+    if np.sum(job_skill[:72],axis=0) > 0: dummys[1] = 1
+    if np.sum(job_skill[72:87],axis=0) > 0: dummys[2] = 1
+    if np.sum(job_skill[87:100],axis=0) > 0: dummys[3] = 1
+    if np.sum(job_skill[100:],axis=0) > 0: dummys[4] = 1
+    if np.sum(job_skill[:],axis=0) > 0: dummys[5] = 1
+
+    return job_skill, dummys
+
+# 解析工资 k/年
+def parse_salary(salary):
+    if salary is None: return None, None
+    if '以下' in salary:
+        res = salary.replace('以下','')
+        s1,s2 = res.split('/')
+        if '元' in s1: maxi = float(s1.replace('元',''))/1000
+        elif '千' in s1: maxi = float(s1.replace('千',''))
+        elif '万' in s1: maxi = float(s1.replace('万',''))*10
+        else: print(salary)
+        if s2 == '月': maxi *= 12
+        elif s2 == '天': maxi *= 365
+        elif s2 == '年': maxi = maxi
+        elif s2 =='小时': maxi *= 40*52
+        else: print(salary)
+        return None, maxi
+    elif '以上' in salary:
+        res = salary.replace('以上','')
+        s1,s2 = res.split('/')
+        if '元' in s1: mini = float(s1.replace('元',''))/1000
+        elif '千' in s1: mini = float(s1.replace('千',''))
+        elif '万' in s1: mini = float(s1.replace('万',''))*10
+        else: print(salary)
+        if s2 == '月': mini *= 12
+        elif s2 == '天': mini *= 365
+        elif s2 == '年': mini = mini
+        elif s2 == '小时': mini *= 40*52
+        else: print(salary)
+        return mini, None
+    else:
+        if '/' not in salary: return None, None
+        else:
+            s1,s2 = salary.split('/')
+            s = s1[:-1]
+            unit = s1[-1]
+            if unit == '元': par = 1/1000
+            elif unit == '千': par = 1
+            elif unit == '万': par = 10
+            else: print(salary)
+            if s2 == '天' or s2 == '日': par *= 365
+            elif s2 == '月': par *= 12
+            elif s2 == '年': par *= 1
+            elif s2 == '小时': par *= 40*52
+            else: print(salary)
+            if '-' not in s: return float(s)*par, float(s)*par
+            else:
+                mini, maxi = s.split('-')
+                mini = float(mini.strip())
+                maxi = float(maxi.strip())
+                return mini*par, maxi*par
