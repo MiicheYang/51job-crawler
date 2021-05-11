@@ -67,6 +67,7 @@ def crawl_detail(urls, save_path, city, skills):
     df = pd.DataFrame(columns = columns)
     df_detail = pd.DataFrame(columns = columns_detail)
     print(f'******爬取 {city} 详细结果******')
+    count = 0
     for idx in range(len(urls)):
         url = urls[idx]['url']
         jid = urls[idx]['id']
@@ -83,14 +84,18 @@ def crawl_detail(urls, save_path, city, skills):
                 # 解析
                 title, salary, cname, info, tags, com_tags, jd, _, _, _ = parse_web(soup) # 暂不爬取特殊信息、公司信息和联系方式
                 mins, maxs = parse_salary(salary)
-                line_info = [jid, title, salary, mins, maxs, cname, url] + info + com_tags[:3] + [jd]
+                line_info = [jid, title, salary, mins, maxs, cname, url] + info[:5] + com_tags[:3] + [jd]
                 results.append(line_info)
                 df.loc[df.shape[0]] = dict(zip(columns, line_info))
                 jd_skill, dummys = parse_jd_skill(jd, skills)
                 df_detail.loc[df_detail.shape[0]] = dict(zip(columns_detail, line_info[:-1] + dummys + jd_skill))
                 success += 1
             except:
-                pass            
+                pass 
+            count += 1
+            if count % 500 == 0:
+                print(f'Cur Process: {count} / {len(urls)}')
+                time.sleep(10)           
     df.to_csv(csv_path + '\\' + city + '.csv', sep = ',', index = 0, encoding = 'utf_8_sig')
     df_detail.to_csv(csv_path + '\\' + city + '_detail.csv', sep = ',', index = 0, encoding = 'utf_8_sig')
     print(f'{city} finished\nTotal {len(urls)} results')
@@ -130,5 +135,5 @@ if __name__ == '__main__':
         result = crawl_detail(urls, save_path, prov, skills)
         results['prov'] = result
     
-    with open('D:\\0506\\results.json', 'w') as f:
+    with open('D:\\0507\\results.json', 'w') as f:
         json.dump(results, f)

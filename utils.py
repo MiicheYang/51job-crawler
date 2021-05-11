@@ -202,7 +202,7 @@ def parse_jd_skill(jd, skills):
                     - len(re.findall(pattern+r'^a-Z',j)) - len(re.findall(r'^a-Z'+pattern,j))
             job_skill[i] += num
 
-    if '奖金' or '年终奖' in jd: dummys = [1,0,0,0,0,0]
+    if '奖金' in jd or '年终奖' in jd: dummys = [1,0,0,0,0,0]
     else: dummys = [0,0,0,0,0,0]
 
     if np.sum(job_skill[:72],axis=0) > 0: dummys[1] = 1
